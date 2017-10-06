@@ -1,5 +1,6 @@
 package com.openxc.sources;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
@@ -13,9 +14,23 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.google.common.base.MoreObjects;
+import com.openxc.measurements.PhoneAccelerometer;
+import com.openxc.measurements.PhoneAltitude;
+import com.openxc.measurements.PhoneAmbientTemperature;
+import com.openxc.measurements.PhoneAtmosphericPressure;
+import com.openxc.measurements.PhoneBearing;
+import com.openxc.measurements.PhoneGPSSpeed;
+import com.openxc.measurements.PhoneGyroscope;
+import com.openxc.measurements.PhoneHeadphoneConnected;
+import com.openxc.measurements.PhoneLightLevel;
+import com.openxc.measurements.PhoneMagnetometer;
+import com.openxc.measurements.PhoneProximity;
+import com.openxc.measurements.PhoneRelativeHumidity;
+import com.openxc.measurements.PhoneRotation;
 import com.openxc.messages.SimpleVehicleMessage;
 
 import java.util.Arrays;
@@ -40,22 +55,21 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
 
     private static LocationManager locationManager;
 
-
     private static SensorManager sensorService;
     private Sensor sensor;
-    private float ax,ay,az;
-    private float rx,ry,rz;
-    private float gx,gy,gz;
-    private float mx,my,mz;
+    private float ax, ay, az;
+    private float rx, ry, rz;
+    private float gx, gy, gz;
+    private float mx, my, mz;
     private float light;
     private float proximity;
     private float humidity;
     private float pressure;
     private float temperature;
-    private double altitude, heading, speed;
+    private double altitude, bearing, speed;
     private Context thecontext;
 
-    String devmodel,devname,osver,headphonesConn;
+    String devmodel, devname, osver;
 
     public PhoneSensorSource(SourceCallback callback, Context context) {
         super(callback, context);
@@ -66,24 +80,24 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
         devname = Build.PRODUCT;
         osver = Build.VERSION.RELEASE;
 
-        System.out.println("MODEL: "+android.os.Build.MODEL
-                +"\nDEVICE: "+android.os.Build.DEVICE
-                +"\nBRAND: "+android.os.Build.BRAND
-                +"\nDISPLAY: "+android.os.Build.DISPLAY
-                +"\nBOARD: "+android.os.Build.BOARD
-                +"\nHOST: "+android.os.Build.HOST
-                +"\nMANUFACTURER: "+android.os.Build.MANUFACTURER
-                +"\nPRODUCT: "+android.os.Build.PRODUCT);
+        System.out.println("MODEL: " + android.os.Build.MODEL
+                + "\nDEVICE: " + android.os.Build.DEVICE
+                + "\nBRAND: " + android.os.Build.BRAND
+                + "\nDISPLAY: " + android.os.Build.DISPLAY
+                + "\nBOARD: " + android.os.Build.BOARD
+                + "\nHOST: " + android.os.Build.HOST
+                + "\nMANUFACTURER: " + android.os.Build.MANUFACTURER
+                + "\nPRODUCT: " + android.os.Build.PRODUCT);
 
-        PackageManager PM= context.getPackageManager();
+        PackageManager PM = context.getPackageManager();
         boolean gyro = PM.hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE);
-        System.out.println("gyro allowed:"+gyro);
+        System.out.println("gyro allowed:" + gyro);
         sensorService = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 
 
         List<Sensor> listSensor = sensorService.getSensorList(Sensor.TYPE_ALL);
-        for(int i=0; i<listSensor.size(); i++)
-        {
+
+        for (int i = 0; i < listSensor.size(); i++) {
             System.out.println("Sensor : " + listSensor.get(i).getName());
         }
 
@@ -134,8 +148,13 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
                         SensorManager.SENSOR_DELAY_NORMAL);
             }
 
+            if (ActivityCompat.checkSelfPermission(thecontext, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(thecontext, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                return;
+            }
             locationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER, DEFAULT_INTERVAL, 10, this);
+
 
         } catch(IllegalArgumentException e) {
             Log.w(TAG, "Problem registering Sensor");
@@ -164,8 +183,9 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
             ay = accelValues[1];
             az = accelValues[2];
 
-            handleMessage(new SimpleVehicleMessage("phone_accelerometer",
-                    Arrays.toString(accelValues)));
+            handleMessage(new SimpleVehicleMessage(PhoneAccelerometer.ID,
+                    accelValues));
+            //handleMessage()
 
         }
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
@@ -175,8 +195,8 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
             ry = rotationValues[1];
             rz = rotationValues[2];
 
-            handleMessage(new SimpleVehicleMessage("phone_rotation",
-                    Arrays.toString(rotationValues)));
+            handleMessage(new SimpleVehicleMessage(PhoneRotation.ID,
+                    rotationValues));
         }
         if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
 
@@ -185,7 +205,7 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
             gy = gyroValues[1];
             gz = gyroValues[2];
 
-            handleMessage(new SimpleVehicleMessage("phone_gyroscope", Arrays.toString(gyroValues)));
+            handleMessage(new SimpleVehicleMessage(PhoneGyroscope.ID, gyroValues));
         }
         if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
 
@@ -194,43 +214,34 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
             my = magnetoValues[1];
             mz = magnetoValues[2];
 
-            handleMessage(new SimpleVehicleMessage("phone_magnetometer", Arrays.toString(magnetoValues)));
+            handleMessage(new SimpleVehicleMessage(PhoneMagnetometer.ID, magnetoValues));
         }
         if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
             //   System.out.println("new light: " + event.values[0]);
             light = event.values[0];
-            handleMessage(new SimpleVehicleMessage("phone_light_level", light));
+
+            handleMessage(new SimpleVehicleMessage(PhoneLightLevel.ID, light));
         }
         if (event.sensor.getType() == Sensor.TYPE_PROXIMITY) {
             //   System.out.println("new light: " + event.values[0]);
             proximity = event.values[0];
-            handleMessage(new SimpleVehicleMessage("phone_proximity", proximity));
+            handleMessage(new SimpleVehicleMessage(PhoneProximity.ID, proximity));
         }
         if (event.sensor.getType() == Sensor.TYPE_PRESSURE) {
             //   System.out.println("new light: " + event.values[0]);
             pressure = event.values[0];
-            handleMessage(new SimpleVehicleMessage("phone_atmospheric_pressure", pressure));
+            handleMessage(new SimpleVehicleMessage(PhoneAtmosphericPressure.ID, pressure));
         }
         if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
             //   System.out.println("new light: " + event.values[0]);
             humidity = event.values[0];
-            handleMessage(new SimpleVehicleMessage("phone_relative_humidity", humidity));
+            handleMessage(new SimpleVehicleMessage(PhoneRelativeHumidity.ID, humidity));
         }
         if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
             //   System.out.println("new light: " + event.values[0]);
             temperature = event.values[0];
-            handleMessage(new SimpleVehicleMessage("phone_ambient_temperature", temperature));
+            handleMessage(new SimpleVehicleMessage(PhoneAmbientTemperature.ID, temperature));
         }
-
-        AudioManager am1 = (AudioManager)thecontext.getSystemService(Context.AUDIO_SERVICE);
-        if (am1.isWiredHeadsetOn()) {
-            headphonesConn="true";
-            handleMessage(new SimpleVehicleMessage("phone_headphones_connected", headphonesConn));
-        } else {
-            headphonesConn="false";
-            handleMessage(new SimpleVehicleMessage("phone_headphones_connected", headphonesConn));
-        }
-
 
     }
 
@@ -281,10 +292,10 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
     @Override
     public void onLocationChanged(Location location) {
         altitude = location.getAltitude();
-        heading = location.getBearing();
+        bearing = location.getBearing();
         speed = location.getSpeed();
-        handleMessage(new SimpleVehicleMessage("phone_altitude", altitude));
-        handleMessage(new SimpleVehicleMessage("phone_heading", heading));
-        handleMessage(new SimpleVehicleMessage("phone_speed", speed));
+        handleMessage(new SimpleVehicleMessage(PhoneAltitude.ID, altitude));
+        handleMessage(new SimpleVehicleMessage(PhoneBearing.ID, bearing));
+        handleMessage(new SimpleVehicleMessage(PhoneGPSSpeed.ID, speed));
     }
 }

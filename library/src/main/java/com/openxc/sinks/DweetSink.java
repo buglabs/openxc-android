@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.util.Log;
 
 import com.buglabs.dweetlib.DweetLib;
+import com.buglabs.dweetlib.DweetProLib;
 import com.openxc.messages.VehicleMessage;
 import com.openxc.messages.formatters.JsonFormatter;
 
@@ -32,6 +33,8 @@ public class DweetSink extends ContextualVehicleDataSink {
     private final static int HTTP_TIMEOUT = 5000;
 
     private String mThingName;
+    private String mThingKey;
+    private String mThingToken;
     private Context mContext;
     private BlockingQueue<VehicleMessage> mRecordQueue =
             new LinkedBlockingQueue<>(MAXIMUM_QUEUED_RECORDS);
@@ -47,6 +50,14 @@ public class DweetSink extends ContextualVehicleDataSink {
     public DweetSink(Context context, String thing_name) {
         super(context);
         mThingName = thing_name;
+        mThingKey = null;
+        mContext = context;
+    }
+    public DweetSink(Context context, String thing_name, String thing_key, String token) {
+        super(context);
+        mThingName = thing_name;
+        mThingKey = thing_key;
+        mThingToken = token;
         mContext = context;
     }
 
@@ -126,29 +137,64 @@ public class DweetSink extends ContextualVehicleDataSink {
             @Override
             public void run() {
                 if(mRunning) {
-                    DweetLib.DweetCallback cb = new DweetLib.DweetCallback() {
-                        @Override
-                        public void callback(ArrayList<Object> ar) {
-                            Integer result = (Integer) ar.get(0);
-                        }
-                    };
-
-                    JSONObject jsonObj = null;
-                    try {
-                        if(records!=null) {
-                            // add all connected sensor data to JSON object
-                            jsonObj = new JSONObject();
-                            JSONArray array = new JSONArray(JsonFormatter.serialize(records));
-                            for (int i = 0; i < array.length(); i++) {
-                                jsonObj.put((String) array.getJSONObject(i).get("name"), array.getJSONObject(i).get("value"));
+                    if (mThingKey != null) {
+                        DweetProLib.DweetProCallback cb = new DweetProLib.DweetProCallback() {
+                            @Override
+                            public void callback(ArrayList<Object> ar) {
+                                Integer result = (Integer) ar.get(0);
                             }
-                            String str = DweetLib.getInstance(mContext).sendDweet(jsonObj, mThingName, "", this, cb, true);
+                        };
+
+                        JSONObject jsonObj = null;
+                        JSONObject jsonData = null;
+                        try {
+                            if (records != null) {
+                                // add all connected sensor data to JSON object
+                                jsonObj = new JSONObject();
+                                jsonObj.put("thing",mThingName);
+                                jsonObj.put("key",mThingKey);
+
+                                jsonData = new JSONObject();
+                                JSONArray array = new JSONArray(JsonFormatter.serialize(records));
+                                for (int i = 0; i < array.length(); i++) {
+                                    jsonData.put((String) array.getJSONObject(i).get("name"), array.getJSONObject(i).get("value"));
+                                }
+                                jsonObj.put("content",jsonData);
+                                String str = DweetProLib.getInstance(mContext).sendDweet(jsonObj, mThingToken, this, cb, true);
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "cfg dweet error" + e);
                         }
-                    } catch (JSONException e) {
-                        Log.e(TAG,"cfg dweet error" + e);
+                        // restart the dweet timer
+                        dweetHandler.postDelayed(this, 1000);
+
                     }
-                    // restart the dweet timer
-                    dweetHandler.postDelayed(this, 1000);
+                    else
+                    {
+                        DweetLib.DweetCallback cb = new DweetLib.DweetCallback() {
+                            @Override
+                            public void callback(ArrayList<Object> ar) {
+                                Integer result = (Integer) ar.get(0);
+                            }
+                        };
+
+                        JSONObject jsonObj = null;
+                        try {
+                            if (records != null) {
+                                // add all connected sensor data to JSON object
+                                jsonObj = new JSONObject();
+                                JSONArray array = new JSONArray(JsonFormatter.serialize(records));
+                                for (int i = 0; i < array.length(); i++) {
+                                    jsonObj.put((String) array.getJSONObject(i).get("name"), array.getJSONObject(i).get("value"));
+                                }
+                                String str = DweetLib.getInstance(mContext).sendDweet(jsonObj, mThingName, "", this, cb, true);
+                            }
+                        } catch (JSONException e) {
+                            Log.e(TAG, "cfg dweet error" + e);
+                        }
+                        // restart the dweet timer
+                        dweetHandler.postDelayed(this, 1000);
+                    }
                 }
             }
 

@@ -1,15 +1,9 @@
 package com.openxc.measurements;
 
-import com.google.common.base.Objects;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
-
 import android.content.Context;
 import android.util.Log;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.openxc.NoValueException;
@@ -20,6 +14,11 @@ import com.openxc.messages.SimpleVehicleMessage;
 import com.openxc.units.Unit;
 import com.openxc.util.AgingData;
 import com.openxc.util.Range;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The BaseMeasurement is the base implementation of the Measurement, and
@@ -64,6 +63,19 @@ public abstract class BaseMeasurement<TheUnit extends Unit>
             cacheMeasurementId(Longitude.class);
             cacheMeasurementId(Odometer.class);
             cacheMeasurementId(ParkingBrakeStatus.class);
+            cacheMeasurementId(PhoneAccelerometer.class);
+            cacheMeasurementId(PhoneAltitude.class);
+            cacheMeasurementId(PhoneAmbientTemperature.class);
+            cacheMeasurementId(PhoneAtmosphericPressure.class);
+            cacheMeasurementId(PhoneBearing.class);
+            cacheMeasurementId(PhoneGPSSpeed.class);
+            cacheMeasurementId(PhoneGyroscope.class);
+            cacheMeasurementId(PhoneHeadphoneConnected.class);
+            cacheMeasurementId(PhoneLightLevel.class);
+            cacheMeasurementId(PhoneMagnetometer.class);
+            cacheMeasurementId(PhoneProximity.class);
+            cacheMeasurementId(PhoneRelativeHumidity.class);
+            cacheMeasurementId(PhoneRotation.class);
             cacheMeasurementId(SteeringWheelAngle.class);
             cacheMeasurementId(TorqueAtTransmission.class);
             cacheMeasurementId(TransmissionGearPosition.class);
@@ -226,10 +238,15 @@ public abstract class BaseMeasurement<TheUnit extends Unit>
 
         try {
             Measurement measurement;
+            //System.out.println("getting measurement from message...");
             SimpleVehicleMessage simpleMessage = message.asSimpleMessage();
+            //System.out.println(simpleMessage.toString());
             Class<?> valueClass = simpleMessage.getValue().getClass();
-            if(valueClass == Double.class || valueClass == Integer.class) {
+            //System.out.println("value class: " + valueClass.toString());
+            if(valueClass == Double.class || valueClass == Integer.class || valueClass == Float.class) {
                 valueClass = Number.class;
+                //System.out.println("making it a Numbah");
+
             }
 
             if(message instanceof EventedSimpleVehicleMessage) {
@@ -258,6 +275,7 @@ public abstract class BaseMeasurement<TheUnit extends Unit>
             } else {
                 try {
                     constructor = measurementType.getConstructor(valueClass);
+                    //System.out.println(constructor.getName());
                 } catch(NoSuchMethodException e) {
                     throw new UnrecognizedMeasurementTypeException(
                             measurementType +
@@ -274,6 +292,8 @@ public abstract class BaseMeasurement<TheUnit extends Unit>
                 measurement.setTimestamp(simpleMessage.getTimestamp());
             }
             // https://github.com/openxc/openxc-android/issues/185
+            System.out.println(measurement.toString());
+            System.out.println(measurement.getGenericName());
             return measurement;
         } catch(InstantiationException e) {
             throw new UnrecognizedMeasurementTypeException(

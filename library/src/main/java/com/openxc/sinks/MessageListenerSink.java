@@ -1,11 +1,5 @@
 package com.openxc.sinks;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import android.util.Log;
 
 import com.google.common.base.MoreObjects;
@@ -19,6 +13,13 @@ import com.openxc.messages.KeyMatcher;
 import com.openxc.messages.KeyedMessage;
 import com.openxc.messages.SimpleVehicleMessage;
 import com.openxc.messages.VehicleMessage;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A data sink that sends new measurements of specific types to listeners.
@@ -108,7 +109,7 @@ public class MessageListenerSink extends AbstractQueuedCallbackSink {
             // measurement in this function, but we don't really have that when
             // adding a listener.
             BaseMeasurement.getKeyForMeasurement(measurementType);
-        } catch(UnrecognizedMeasurementTypeException e) { }
+        } catch(UnrecognizedMeasurementTypeException e) { System.out.println("WFTWTF"); }
 
         mMeasurementTypeListeners.put(measurementType, listener);
     }
@@ -196,6 +197,9 @@ public class MessageListenerSink extends AbstractQueuedCallbackSink {
         try {
             Measurement measurement =
                 BaseMeasurement.getMeasurementFromMessage(message);
+            System.out.println("message propogating");
+            System.out.println(measurement.getGenericName());
+            System.out.println(Arrays.toString(mMeasurementTypeListeners.keys().toArray()));
             if(mMeasurementTypeListeners.containsKey(measurement.getClass())) {
                 for(Measurement.Listener listener :
                         mMeasurementTypeListeners.get(measurement.getClass())) {

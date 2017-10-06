@@ -839,7 +839,7 @@ public class VehicleManager extends Service implements DataPipeline.Operator {
     private void bindRemote() {
         Log.i(TAG, "Binding to VehicleService");
         Intent intent = new Intent(VehicleService.class.getName());
-        intent.setComponent(new ComponentName("com.openxcplatform.enabler", "com.openxc.remote.VehicleService"));
+        intent.setComponent(new ComponentName("com.openxcplatform.dweet", "com.openxc.remote.VehicleService"));
 
         try {
             bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
