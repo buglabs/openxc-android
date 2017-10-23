@@ -15,12 +15,21 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.os.Build;
+
 
 import com.bugsnag.android.Bugsnag;
 import com.openxcplatform.dweet.BuildConfig;
 import com.openxc.VehicleManager;
 import com.openxc.dweet.preferences.PreferenceManagerService;
 import com.openxcplatform.dweet.R;
+
+import java.util.ArrayList;
+
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+
 
 /** The OpenXC Enabler app is primarily for convenience, but it also increases
  * the reliability of OpenXC by handling background tasks on behalf of client
@@ -46,6 +55,14 @@ public class OpenXcEnablerActivity extends FragmentActivity {
 
     private EnablerFragmentAdapter mAdapter;
     private ViewPager mPager;
+
+    String[] perms = {"android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.ACCESS_FINE_LOCATION"};
+    private ArrayList<String> permissionsToRequest;
+    private ArrayList<String>  permissionsRejected;
+    private final static int FINE_LOCATION_RESULT = 101;
+    private final static int WRITE_EXTERNAL_RESULT = 102;
+    private final static int READ_EXTERNAL_RESULT = 103;
+    private final static int ALL_PERMISSIONS_RESULT = 104;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -74,6 +91,18 @@ public class OpenXcEnablerActivity extends FragmentActivity {
 
         startService(new Intent(this, VehicleManager.class));
         startService(new Intent(this, PreferenceManagerService.class));
+
+        if (isMarshorAbove()) {
+            int permsRequestCode = 200;
+            ArrayList<String> permissions = new ArrayList<>();
+            permissions.add(ACCESS_FINE_LOCATION);
+            permissions.add(WRITE_EXTERNAL_STORAGE);
+            permissions.add(READ_EXTERNAL_STORAGE);
+            int resultCode = ALL_PERMISSIONS_RESULT;
+            permissionsToRequest = filterPermissions(permissions);
+            if (permissionsToRequest != null && permissionsToRequest.size()>0)
+                requestPermissions(permissionsToRequest.toArray(new String[permissionsToRequest.size()]), resultCode);
+        }
     }
 
     @Override
@@ -149,5 +178,77 @@ public class OpenXcEnablerActivity extends FragmentActivity {
             Log.e(TAG, "Unexpected NameNotFound.", e);
         }
         return key;
+    }
+
+    public void onRequestPermissionsResult(int permsRequestCode, String[] permissions, int[] grantResults){
+
+        switch(permsRequestCode){
+
+            case ALL_PERMISSIONS_RESULT:
+
+                boolean someAccepted = false;
+                boolean someRejected = false;
+                if(permissionsRejected == null)
+                    permissionsRejected = new ArrayList<String>();
+
+                for(String perms : permissionsToRequest){
+                    if(hasPermission(perms)){
+                        someAccepted = true;
+                    }else{
+                        someRejected = true;
+                        permissionsRejected.add(perms);
+                    }
+                }
+
+                if(permissionsRejected.size()>0){
+                    someRejected = true;
+                }
+
+                if(someAccepted){
+                }
+                if(someRejected){
+                    Log.w(TAG,"Some permissions rejected by user, app may experience issues");
+                }
+                break;
+
+        }
+
+    }
+
+    /**
+     * This method is used to determine the permissions we do not have accepted yet.
+     * @param wanted
+     * @return
+     */
+    private ArrayList<String> filterPermissions(ArrayList<String> wanted) {
+        ArrayList<String> result = new ArrayList<String>();
+
+        for (String perm : wanted) {
+            if (!hasPermission(perm)) {
+                result.add(perm);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * method that will return whether the permission is accepted. By default it is true if the user is using a device below
+     * version 23
+     * @param permission
+     * @return
+     */
+    private boolean hasPermission(String permission) {
+        if (isMarshorAbove()) {
+            return(checkSelfPermission(permission)== PackageManager.PERMISSION_GRANTED);
+        }
+        return true;
+    }
+    /**
+     * Check if device is Android Marshmallow or later (version 23)
+     * @return
+     */
+    private boolean isMarshorAbove() {
+        return(Build.VERSION.SDK_INT>Build.VERSION_CODES.LOLLIPOP_MR1);
     }
 }

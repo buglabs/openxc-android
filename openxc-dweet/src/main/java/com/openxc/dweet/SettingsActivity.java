@@ -50,13 +50,13 @@ import java.util.Map;
 public class SettingsActivity extends PreferenceActivity {
     private static String TAG = "SettingsActivity";
     private final static String RECORDING_PREFERENCE =
-            "com.openxc.enabler.preferences.RECORDING";
+            "com.openxc.dweet.preferences.RECORDING";
     private final static String DATA_SOURCE_PREFERENCE =
-            "com.openxc.enabler.preferences.DATA_SOURCE";
+            "com.openxc.dweet.preferences.DATA_SOURCE";
     private final static String OUTPUT_PREFERENCE =
-            "com.openxc.enabler.preferences.OUTPUT";
+            "com.openxc.dweet.preferences.OUTPUT";
     private final static String ABOUT_PREFERENCE =
-            "com.openxc.enabler.preferences.ABOUT";
+            "com.openxc.dweet.preferences.ABOUT";
     private final static int FILE_SELECTOR_RESULT = 100;
 
     private ListPreference mVehicleInterfaceListPreference;

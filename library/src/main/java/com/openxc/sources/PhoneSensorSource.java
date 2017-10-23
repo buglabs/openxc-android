@@ -32,6 +32,7 @@ import com.openxc.measurements.PhoneProximity;
 import com.openxc.measurements.PhoneRelativeHumidity;
 import com.openxc.measurements.PhoneRotation;
 import com.openxc.messages.SimpleVehicleMessage;
+import com.openxc.messages.VehicleMessage;
 
 import java.util.Arrays;
 import java.util.List;
@@ -58,7 +59,7 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
     private static SensorManager sensorService;
     private Sensor sensor;
     private float ax, ay, az;
-    private float rx, ry, rz;
+    private float rx, ry, rz, rw, racc;
     private float gx, gy, gz;
     private float mx, my, mz;
     private float light;
@@ -183,9 +184,12 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
             ay = accelValues[1];
             az = accelValues[2];
 
-            handleMessage(new SimpleVehicleMessage(PhoneAccelerometer.ID,
-                    accelValues));
-            //handleMessage()
+            handleMessage(new SimpleVehicleMessage(PhoneAccelerometer.ID+"_x",ax));
+            handleMessage(new SimpleVehicleMessage(PhoneAccelerometer.ID+"_y",ay));
+            handleMessage(new SimpleVehicleMessage(PhoneAccelerometer.ID+"_z",az));
+//            handleMessage(new SimpleVehicleMessage(PhoneAccelerometer.ID,
+//                    accelValues));
+            //handleMessage(new SimpleVehicleMessage(System.currentTimeMillis(),PhoneAccelerometer.ID,accel));
 
         }
         if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
@@ -194,9 +198,21 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
             rx = rotationValues[0];
             ry = rotationValues[1];
             rz = rotationValues[2];
+            rw = rotationValues[3];
+            racc = rotationValues[4];
 
-            handleMessage(new SimpleVehicleMessage(PhoneRotation.ID,
-                    rotationValues));
+//            handleMessage(new SimpleVehicleMessage(PhoneRotation.ID,
+//                    rotationValues));
+            handleMessage(new SimpleVehicleMessage(PhoneRotation.ID+"_x",
+                    rx));
+            handleMessage(new SimpleVehicleMessage(PhoneRotation.ID+"_y",
+                    ry));
+            handleMessage(new SimpleVehicleMessage(PhoneRotation.ID+"_z",
+                    rz));
+            handleMessage(new SimpleVehicleMessage(PhoneRotation.ID+"_w",
+                    rw));
+            handleMessage(new SimpleVehicleMessage(PhoneRotation.ID+"_acc",
+                    racc));
         }
         if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
 
@@ -205,7 +221,10 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
             gy = gyroValues[1];
             gz = gyroValues[2];
 
-            handleMessage(new SimpleVehicleMessage(PhoneGyroscope.ID, gyroValues));
+            //handleMessage(new SimpleVehicleMessage(PhoneGyroscope.ID, gyroValues));
+            handleMessage(new SimpleVehicleMessage(PhoneGyroscope.ID+"_x", gx));
+            handleMessage(new SimpleVehicleMessage(PhoneGyroscope.ID+"_y", gy));
+            handleMessage(new SimpleVehicleMessage(PhoneGyroscope.ID+"_z", gz));
         }
         if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
 
@@ -214,7 +233,10 @@ public class PhoneSensorSource extends ContextualVehicleDataSource
             my = magnetoValues[1];
             mz = magnetoValues[2];
 
-            handleMessage(new SimpleVehicleMessage(PhoneMagnetometer.ID, magnetoValues));
+//            handleMessage(new SimpleVehicleMessage(PhoneMagnetometer.ID, magnetoValues));
+            handleMessage(new SimpleVehicleMessage(PhoneMagnetometer.ID+"_x", mx));
+            handleMessage(new SimpleVehicleMessage(PhoneMagnetometer.ID+"_y", my));
+            handleMessage(new SimpleVehicleMessage(PhoneMagnetometer.ID+"_z", mz));
         }
         if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
             //   System.out.println("new light: " + event.values[0]);

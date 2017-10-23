@@ -90,7 +90,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class VehicleManager extends Service implements DataPipeline.Operator {
     public final static String VEHICLE_LOCATION_PROVIDER =
             VehicleLocationProvider.VEHICLE_LOCATION_PROVIDER;
-    private final static String TAG = "VehicleManager";
+    private final static String TAG = "OXCDweetVehicleManager";
     private Lock mRemoteBoundLock = new ReentrantLock();
     private Condition mRemoteBoundCondition = mRemoteBoundLock.newCondition();
     private IBinder mBinder = new VehicleBinder();
